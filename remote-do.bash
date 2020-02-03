@@ -69,13 +69,18 @@ ctrl_c_trap() {
 }
 
 for OPT_CONF in "${OPT_CONFS[@]}"; do
+	CONF_DIR="$(find_conf_dir "$PWD")"
+	if [[ ! -d ${CONF_DIR} ]]; then
+		echoerr "Conf directory not found!"
+		exit 1
+	fi
 
-	if [[ ! -f "${PWD}/.remote/${OPT_CONF}" ]]; then
-		echowarn "Conf ${OPT_CONF} doesn't exist!"
+	if [[ ! -f "${CONF_DIR}/${OPT_CONF}" ]]; then
+		echowarn "Conf file ${OPT_CONF} not found!"
 		continue
 	fi
 
-	exec < "${PWD}/.remote/${OPT_CONF}"
+	exec < "${CONF_DIR}/${OPT_CONF}"
 
 	while read SITE_NAME SITE_URL SITE_EXTRA; do
 		[[ -z $SITE_NAME ]] && continue

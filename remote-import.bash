@@ -67,23 +67,29 @@ if [[ -z $OPT_DSTSITE ]]; then
 	OPT_DSTSITE="$OPT_SRCSITE"
 fi
 
-echodebug "Loading source site '$OPT_SRCSITE' info from '$PWD/.remote/${OPT_SRCCONF}'."
-eval "$(load_site_info_wp "$PWD/.remote/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
+CONF_DIR="$(find_conf_dir "$PWD")"
+if [[ ! -d ${CONF_DIR} ]]; then
+	echoerr "Conf directory not found!"
+	exit 1
+fi
+
+echodebug "Loading source site '$OPT_SRCSITE' info from '${CONF_DIR}/${OPT_SRCCONF}'."
+eval "$(load_site_info_wp "${CONF_DIR}/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
 	
 if [[ -z $SRC_SITE_URL ]]; then
 	echoerr "Site $OPT_SRCSITE not found in conf $OPT_SRCCONF!"
 	exit 1
 fi
 
-echodebug "Loading destination site '$OPT_DSTSITE' info from '$PWD/.remote/${OPT_DSTCONF}'."
-eval "$(load_site_info_wp "$PWD/.remote/${OPT_DSTCONF}" "$OPT_DSTSITE" "DST_")"
+echodebug "Loading destination site '$OPT_DSTSITE' info from '${CONF_DIR}/${OPT_DSTCONF}'."
+eval "$(load_site_info_wp "${CONF_DIR}/${OPT_DSTCONF}" "$OPT_DSTSITE" "DST_")"
 
 if [[ -z $DST_SITE_URL ]]; then
 	echoerr "Site $OPT_DSTSITE not found in conf $OPT_DSTCONF!"
 	exit 1
 fi
 
-CACHEDIR="$PWD/.remote-backup"
+CACHEDIR="${CONF_DIR}/../.remote-backup"
 BACKUP="$CACHEDIR/${OPT_SRCCONF}-${OPT_SRCSITE}.sql.gz"
 if [[ ! -f $BACKUP || $OPT_FORCE == yes ]]; then
 	echoinfo "Exporting db ${OPT_SRCCONF}/${OPT_SRCSITE}."

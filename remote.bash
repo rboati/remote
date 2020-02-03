@@ -114,3 +114,16 @@ load_site_info() {
 	EOF
 }
 
+find_conf_dir() {
+	local CUR="$1"
+	CUR="$(cd "$CUR" && pwd)"
+	while [[ $CUR != '/' ]]; do
+		if [[ -d $CUR/.remote ]]; then
+			echo "$CUR/.remote"
+			return 0
+		fi
+		CUR="$(cd "$CUR/.." && pwd)"
+	done
+	return 1
+}
+
