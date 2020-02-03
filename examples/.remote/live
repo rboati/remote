@@ -1,0 +1,4 @@
+#site_name    #remote_url                                                       #web_url                 #wp_uploads_dir
+mysite1       ssh://user1@host1/docker://site1_prod/var/www/html/site1/wwwroot  https://www.mysite1.com  /srv/site1_prod/www/site1/wwwroot/wp-content/uploads
+mysite2       ssh://user2@host2/docker://site2_prod/var/www/html/site2/wwwroot  https://www.mysite2.com  /srv/site2_prod/www/site2/wwwroot/wp-content/uploads
+mysite2       ssh://user3@host3/docker://site3_prod/var/www/html/site3/wwwroot  https://www.mysite3.com  /srv/site3_prod/www/site3/wwwroot/wp-content/uploads

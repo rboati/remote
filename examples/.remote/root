@@ -1,0 +1,4 @@
+#site_name    #remote_url
+mysite1       ssh://root@hostname1/
+mysite2       ssh://root@hostname2/
+mysite3       ssh://root@hostname3/

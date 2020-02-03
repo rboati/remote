@@ -1,0 +1,7 @@
+#site_name    #remote_url                       #web_url
+mysite1       /home/roby/public/site1/wwwroot   http://local.mysite1.com
+mysite2       /home/roby/public/site2/wwwroot   http://local.mysite2.com
+mysite4       /home/roby/public/site3/wwwroot   http://local.mysite3.com
+  
+  
+  

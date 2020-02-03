@@ -1,0 +1,4 @@
+#site_name    #remote_url                       #web_url
+mysite1       ssh://user1_test@host1/~/wwwroot  https://test.mysite1.com
+mysite2       ssh://user2_test@host2/~/wwwroot  https://test.mysite2.com
+mysite2       ssh://user3_test@host3/~/wwwroot  https://test.mysite3.com
