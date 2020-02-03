@@ -1,12 +1,13 @@
-declare -r LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
-declare -r LOGCOLORS=( '0' '1;31' '31' '33' '34' '37'  '1' )
+declare -a -r LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
+declare -a LOGCOLORS=( '0' '1;31' '31' '33' '34' '37'  '1' )
+declare -i -r LOGLEVEL_DEFAULT=3
 
 if [[ -z $LOGDOMAIN ]]; then	
-	LOGDOMAIN="${BASH_SOURCE[1]##*/}"
+	declare LOGDOMAIN="${BASH_SOURCE[1]##*/}"
 fi
 
-if [[ -z $LOGLEVEL ]]; then	
-	declare -i LOGLEVEL=3
+if [[ -z $LOGLEVEL ]]; then
+	declare -i LOGLEVEL=$LOGLEVEL_DEFAULT
 fi
 
 if [[ -z $LOGCOLOR ]]; then	
@@ -14,7 +15,7 @@ if [[ -z $LOGCOLOR ]]; then
 fi
 
 if [[ -z $LOGSINK ]]; then	
-	LOGSINK=logsink_stderr_color
+	declare LOGSINK=logsink_stderr_color
 fi
 
 logsink_stdout() {
@@ -42,9 +43,10 @@ logsink_stderr_color() {
 }
 
 regenerate_logfunctions() {
-	declare -r LOGSUFFIXES=( _ fatal err warn info debug trace )
-	declare -i LEVEL
+	declare -r LOGSUFFIXES=( none fatal err warn info debug trace )
+	declare -i LEVEL i
 	local SUFFIX TEMPLATE
+	
 	for (( LEVEL=1; LEVEL<7; ++LEVEL )); do
 		SUFFIX=${LOGSUFFIXES[$LEVEL]}
 		if (( LOGLEVEL >= $LEVEL )); then
@@ -64,6 +66,41 @@ regenerate_logfunctions() {
 		fi
 		eval "$TEMPLATE"
 	done
+}
+
+set_loglevel() {
+	local LEVEL="$1"
+	declare -i i err=0
+
+	if [[ $LEVEL =~ ^[0-9]+$ ]]; then
+		if (( LEVEL < 0 )); then
+			LEVEL=0
+			err=1
+		elif (( LOGLEVEL > ( ${#LOGLEVELS[@]} - 1 ) )); then
+			LEVEL=$(( ${#LOGLEVELS[@]} - 1 ))
+			err=2
+		fi
+	elif [[ $LEVEL =~ ^[A-Z]+$ ]]; then
+		while : ; do
+			for (( i=0; i < ${#LOGLEVELS[@]}; ++i )); do
+				if [[ $LEVEL == ${LOGLEVELS[$i]} ]]; then
+					LEVEL=$i
+					break 2
+				fi
+			done
+			LEVEL=$LOGLEVEL_DEFAULT
+			err=3
+			break
+		done
+	else
+		LEVEL=$LOGLEVEL_DEFAULT
+		err=4
+	fi
+	if [[ $LOGLEVEL != $LEVEL ]]; then
+		LOGLEVEL=$LEVEL
+		regenerate_logfunctions
+	fi
+	return $err
 }
 
   logfatal() { :; }
