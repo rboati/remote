@@ -1,5 +1,7 @@
 
-ssh() {
+DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
+
+ssh_wrapper() {
 	[[ -d $HOME/.ssh/ctl/ ]] || mkdir -p "$HOME/.ssh/ctl"
 	/usr/bin/ssh -x -C -S "$HOME/.ssh/ctl/%r@%h:%p" -o ControlMaster=auto -o ControlPersist=10 "$@"
 }
@@ -46,11 +48,11 @@ parse_site_url() {
 			TMP_SITE_DIR="$URL"
 	esac
 
-	cat << EOF
-${PREFIX}SSH_DEST='$TMP_SSH_DEST'
-${PREFIX}SITE_DIR='$TMP_SITE_DIR'
-${PREFIX}DOCKER='$TMP_DOCKER'
-EOF
+	cat <<- EOF
+	${PREFIX}SSH_DEST='$TMP_SSH_DEST'
+	${PREFIX}SITE_DIR='$TMP_SITE_DIR'
+	${PREFIX}DOCKER='$TMP_DOCKER'
+	EOF
 }
 
 
@@ -61,9 +63,9 @@ remote_exec() {
 	if [[ -z $SSH_DEST ]]; then
 		/bin/bash -c "cd '${SITE_DIR}'; exec /bin/bash;"
 	elif [[ -z $DOCKER ]]; then
-		ssh "${SSH_DEST}" -- "exec /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
+		ssh_wrapper "${SSH_DEST}" -- "exec /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
 	else
-		ssh "${SSH_DEST}" -- "exec docker exec -i "${DOCKER}" /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
+		ssh_wrapper "${SSH_DEST}" -- "exec docker exec -i "${DOCKER}" /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
 	fi
 }
 
@@ -75,9 +77,9 @@ remote_exec_i() {
 	if [[ -z $SSH_DEST ]]; then
 		/bin/bash -c "cd '${SITE_DIR}'; exec /bin/bash -i;"
 	elif [[ -z $DOCKER ]]; then
-		ssh -tt "${SSH_DEST}" -- "exec /bin/bash -i -c \"cd '${SITE_DIR}'; exec /bin/bash -i;\""
+		ssh_wrapper -tt "${SSH_DEST}" -- "exec /bin/bash -i -c \"cd '${SITE_DIR}'; exec /bin/bash -i;\""
 	else
-		ssh -tt "${SSH_DEST}" -- "exec docker exec --privileged -i -t '${DOCKER}' /bin/bash -i -c \"cd '${SITE_DIR}'; export COLUMNS=\$(tput cols); export LINES=\$(tput lines); exec /bin/bash -i;\""
+		ssh_wrapper -tt "${SSH_DEST}" -- "exec docker exec --privileged -i -t '${DOCKER}' /bin/bash -i -c \"cd '${SITE_DIR}'; export COLUMNS=\$(tput cols); export LINES=\$(tput lines); exec /bin/bash -i;\""
 	fi
 }
 
@@ -85,7 +87,7 @@ remote_exec_i() {
 array_contains() {
 	local i match="$1"
 	shift
-	for i; do [[ "$i" = "$match" ]] && return 0; done
+	for i; do [[ $i == $match ]] && return 0; done
 	return 1
 }
 
@@ -101,14 +103,14 @@ load_site_info() {
 		[[ $TMP_SITE_NAME == $SITE_NAME_REQ ]] && break
 	done < "${CONF_FILE}"
 	
-	cat << EOF
-${PREFIX}SITE_NAME='$TMP_SITE_NAME'
-${PREFIX}SITE_URL='$TMP_SITE_URL'
-${PREFIX}EXTRA1='$TMP_EXTRA1'
-${PREFIX}EXTRA2='$TMP_EXTRA2'
-${PREFIX}EXTRA3='$TMP_EXTRA3'
-${PREFIX}EXTRA4='$TMP_EXTRA4'
-${PREFIX}EXTRA5='$TMP_EXTRA5'
-EOF
+	cat <<- EOF
+	${PREFIX}SITE_NAME='$TMP_SITE_NAME'
+	${PREFIX}SITE_URL='$TMP_SITE_URL'
+	${PREFIX}EXTRA1='$TMP_EXTRA1'
+	${PREFIX}EXTRA2='$TMP_EXTRA2'
+	${PREFIX}EXTRA3='$TMP_EXTRA3'
+	${PREFIX}EXTRA4='$TMP_EXTRA4'
+	${PREFIX}EXTRA5='$TMP_EXTRA5'
+	EOF
 }
 

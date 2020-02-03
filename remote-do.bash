@@ -1,10 +1,12 @@
 #/bin/bash
 
-DIR="$(cd "$(dirname "$(realpath "$BASH_SOURCE")")" && pwd -P)"
+DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 NAME="${0##*/}"
 
-source "${DIR}/remote.bash"
+[[ -z $LOGLEVEL ]] && LOGLEVEL=4
 source "${DIR}/loglevel.bash"
+
+source "${DIR}/remote.bash"
 
 OPT_INTERACTIVE=yes
 OPT_SITES=()
@@ -57,6 +59,7 @@ if [[ ${#OPT_CONFS[@]} == 0 ]]; then
 	# default conf
 	OPT_CONFS+=(test)
 fi
+echotrace "OPT_CONFS=(${OPT_CONFS[@]})."
 
 exec 6<&0 # save stdin
 
@@ -124,13 +127,16 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 		fi
 
 		if [[ $# == 0 ]]; then
+			echotrace "remote_exec_i '$SITE_URL'"
 			remote_exec_i "$SITE_URL" 0<&6
 		else
+			echotrace "echo '$@' | remote_exec '$SITE_URL'"
 			echo "eval \"$@\";" | remote_exec "$SITE_URL"
 		fi
 	done
 done
 
 exec 0<&6 6<&- # restore stdin
+echoinfo "Finished."
 
 

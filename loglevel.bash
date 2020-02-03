@@ -1,5 +1,5 @@
 declare -r LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
-declare -r LOGCOLORS=( '0' '1;31' '31' '33' '36' '37'  '0' )
+declare -r LOGCOLORS=( '0' '1;31' '31' '33' '34' '37'  '1' )
 
 if [[ -z $LOGDOMAIN ]]; then	
 	LOGDOMAIN="${BASH_SOURCE[1]##*/}"

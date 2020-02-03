@@ -1,10 +1,12 @@
 #/bin/bash
 
-DIR="$(cd "$(dirname "$(realpath "$BASH_SOURCE")")" && pwd -P)"
+DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 NAME="${0##*/}"
 
-source "${DIR}/remote-wp.bash"
+[[ -z $LOGLEVEL ]] && LOGLEVEL=4
 source "${DIR}/loglevel.bash"
+
+source "${DIR}/remote-wp.bash"
 
 OPT_FORCE=no
 OPT_DEACTIVATE=no
@@ -65,7 +67,7 @@ if [[ -z $OPT_DSTSITE ]]; then
 	OPT_DSTSITE="$OPT_SRCSITE"
 fi
 
-
+echodebug "Loading source site '$OPT_SRCSITE' info from '$PWD/.remote/${OPT_SRCCONF}'."
 eval "$(load_site_info_wp "$PWD/.remote/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
 	
 if [[ -z $SRC_SITE_URL ]]; then
@@ -73,6 +75,7 @@ if [[ -z $SRC_SITE_URL ]]; then
 	exit 1
 fi
 
+echodebug "Loading destination site '$OPT_DSTSITE' info from '$PWD/.remote/${OPT_DSTCONF}'."
 eval "$(load_site_info_wp "$PWD/.remote/${OPT_DSTCONF}" "$OPT_DSTSITE" "DST_")"
 
 if [[ -z $DST_SITE_URL ]]; then
@@ -83,20 +86,21 @@ fi
 CACHEDIR="$PWD/.remote-backup"
 BACKUP="$CACHEDIR/${OPT_SRCCONF}-${OPT_SRCSITE}.sql.gz"
 if [[ ! -f $BACKUP || $OPT_FORCE == yes ]]; then
-	echo "$NAME: Exporting db ${OPT_SRCCONF}/${OPT_SRCSITE}"
+	echoinfo "Exporting db ${OPT_SRCCONF}/${OPT_SRCSITE}."
 	mkdir -p "$CACHEDIR"
 	export_db "$SRC_SITE_URL" > "$BACKUP"
 fi
 
-echoinfo "$NAME: Importing into db ${OPT_DSTCONF}/${OPT_DSTSITE}"
-cat "$BACKUP" | import_db "$DST_SITE_URL" &
+echoinfo "Importing into db ${OPT_DSTCONF}/${OPT_DSTSITE}."
+cat "$BACKUP" | import_db "$DST_SITE_URL"
 
-echoinfo "Replacinf"
+echoinfo "Replacing '$SRC_SITE_WEBURL' -> '$DST_SITE_WEBURL'."
 replace_text_in_db "${DST_SITE_URL}" "$SRC_SITE_WEBURL" "$DST_SITE_WEBURL"
 
 if [[ $OPT_DEACTIVATE == yes ]]; then
+	echoinfo "Deactivating unwanted plugins."
 	deactivate_live_plugins "${DST_SITE_URL}"
 fi
-
+echoinfo "Finished."
 
 
