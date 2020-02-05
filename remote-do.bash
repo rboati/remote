@@ -4,13 +4,13 @@ DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 NAME="${0##*/}"
 
 [[ -z $LOGLEVEL ]] && LOGLEVEL=4
-source "${DIR}/loglevel.bash"
-
-source "${DIR}/remote.bash"
+source "${DIR}/libloglevel.bash"
+source "${DIR}/libremote.bash"
 
 OPT_INTERACTIVE=yes
 OPT_SITES=()
 OPT_CONFS=()
+declare -i EXIT_CODE=0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -68,12 +68,14 @@ ctrl_c_trap() {
   	exit
 }
 
+CONF_DIR="$(find_conf_dir "$PWD")"
+echodebug "find_conf_dir: \$?=$?"
+echodebug "CONF_DIR='$CONF_DIR'"
+if [[ ! -d ${CONF_DIR} ]]; then
+	echoerr "Conf directory not found!"
+	exit 1
+fi
 for OPT_CONF in "${OPT_CONFS[@]}"; do
-	CONF_DIR="$(find_conf_dir "$PWD")"
-	if [[ ! -d ${CONF_DIR} ]]; then
-		echoerr "Conf directory not found!"
-		exit 1
-	fi
 
 	if [[ ! -f "${CONF_DIR}/${OPT_CONF}" ]]; then
 		echowarn "Conf file ${OPT_CONF} not found!"
@@ -138,10 +140,12 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 			echotrace "echo '$@' | remote_exec '$SITE_URL'"
 			echo "eval \"$@\";" | remote_exec "$SITE_URL"
 		fi
+		EXIT_CODE=$?
 	done
 done
 
 exec 0<&6 6<&- # restore stdin
-echoinfo "Finished."
+echoinfo "Finished (EXIT_CODE=$EXIT_CODE)."
+exit $EXIT_CODE
 
 

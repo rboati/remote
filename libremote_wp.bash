@@ -1,6 +1,8 @@
+[[ -n $LIBREMOTE_WP_VERSION ]] && return
+declare -i -r LIBREMOTE_WP_VERSION=1
 
 DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
-source "${DIR}/remote.bash"
+source "$DIR/libremote.bash"
 
 export_db() {
 	local SITE_URL="$1"

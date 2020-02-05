@@ -1,5 +1,6 @@
+[[ -n $LIBREMOTE_VERSION ]] && return
+declare -i -r LIBREMOTE_VERSION=1
 
-DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 
 ssh_wrapper() {
 	[[ -d $HOME/.ssh/ctl/ ]] || mkdir -p "$HOME/.ssh/ctl"
@@ -114,6 +115,7 @@ load_site_info() {
 	EOF
 }
 
+
 find_conf_dir() {
 	local CUR="$1"
 	CUR="$(cd "$CUR" && pwd)"
@@ -127,3 +129,4 @@ find_conf_dir() {
 	return 1
 }
 
+# vim:set ft=sh:

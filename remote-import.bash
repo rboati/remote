@@ -4,9 +4,8 @@ DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 NAME="${0##*/}"
 
 [[ -z $LOGLEVEL ]] && LOGLEVEL=4
-source "${DIR}/loglevel.bash"
-
-source "${DIR}/remote-wp.bash"
+source "${DIR}/libloglevel.bash"
+source "${DIR}/libremote_wp.bash"
 
 OPT_FORCE=no
 OPT_DEACTIVATE=no
@@ -63,6 +62,11 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
+exec 3>&2
+LOGSINK='1>&3' generate_logfunctions
+exec >  >(LOGDOMAIN=stdout loginfo)
+exec 2> >(LOGDOMAIN=stderr logwarn)
+
 if [[ -z $OPT_DSTSITE ]]; then
 	OPT_DSTSITE="$OPT_SRCSITE"
 fi
@@ -77,7 +81,7 @@ echodebug "Loading source site '$OPT_SRCSITE' info from '${CONF_DIR}/${OPT_SRCCO
 eval "$(load_site_info_wp "${CONF_DIR}/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
 	
 if [[ -z $SRC_SITE_URL ]]; then
-	echoerr "Site $OPT_SRCSITE not found in conf $OPT_SRCCONF!"
+	echoerr "Site source site not specified!"
 	exit 1
 fi
 
@@ -85,7 +89,7 @@ echodebug "Loading destination site '$OPT_DSTSITE' info from '${CONF_DIR}/${OPT_
 eval "$(load_site_info_wp "${CONF_DIR}/${OPT_DSTCONF}" "$OPT_DSTSITE" "DST_")"
 
 if [[ -z $DST_SITE_URL ]]; then
-	echoerr "Site $OPT_DSTSITE not found in conf $OPT_DSTCONF!"
+	echoerr "Site destination site not specified!"
 	exit 1
 fi
 
