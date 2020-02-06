@@ -1,9 +1,9 @@
 [[ -n $LIBLOGLEVEL_VERSION ]] && return
 declare -ir LIBLOGLEVEL_VERSION=1
 
-declare -ar LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
-declare -a  LOGCOLORS=( '0' '1;31' '31' '33' '34' '37'  '1' )
-declare -ir LOGLEVEL_DEFAULT=3
+declare -a LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
+declare -a LOGCOLORS=( 0  '1;31' '31' '33' '34' '37'  '1' )
+declare -i LOGLEVEL_DEFAULT=3
 
 if [[ -z $LOGDOMAIN ]]; then
 	declare LOGDOMAIN="${BASH_SOURCE[1]##*/}"
@@ -23,7 +23,8 @@ fi
 
 
 generate_logfunctions() {
-	declare -a LOGSUFFIXES=( none fatal err warn info debug trace )
+	declare -a SUFFIXES=( "${LOGLEVELS[@],,}" )
+	unset SUFFIXES[0]
 	declare -i LEVEL i
 	declare SUFFIX
 	declare LEVELNAME
@@ -31,10 +32,14 @@ generate_logfunctions() {
 	declare -r RESET="\e[0m"
 	declare TEMPLATE TEMPLATE_SINK
 
-	for (( LEVEL=1; LEVEL<7; ++LEVEL )); do
-		SUFFIX=${LOGSUFFIXES[$LEVEL]}
+	for LEVEL in ${!SUFFIXES[@]}; do
+		SUFFIX=${SUFFIXES[$LEVEL]}
 		LEVELNAME="${LOGLEVELS[$LEVEL]}"
-		COLOR="\e[${LOGCOLORS[$LEVEL]}m"
+		COLOR="${LOGCOLORS[$LEVEL]}"
+		if [[ -z $COLOR ]]; then
+			COLOR='0'
+		fi
+		COLOR="\e[${COLOR}m"
 			
 		if (( LOGLEVEL >= LEVEL )); then
 			if [[ $LOGCOLOR == 1 ]]; then
@@ -90,19 +95,19 @@ generate_logfunctions() {
 ## printXXX functions log as level XXX, similarly to the "printf" command
 ##
   logfatal() { return $?; }
-    logerr() { return $?; }
+  logerror() { return $?; }
    logwarn() { return $?; }
    loginfo() { return $?; }
   logdebug() { return $?; }
   logtrace() { return $?; }
  echofatal() { return $?; }
-   echoerr() { return $?; }
+ echoerror() { return $?; }
   echowarn() { return $?; }
   echoinfo() { return $?; }
  echodebug() { return $?; }
  echotrace() { return $?; }
 printfatal() { return $?; }
-  printerr() { return $?; }
+printerror() { return $?; }
  printwarn() { return $?; }
  printinfo() { return $?; }
 printdebug() { return $?; }
@@ -121,23 +126,22 @@ printtrace() { return $?; }
 ##   1 : underflow, cannot set the requested numeric level; level has been set to the minimum (0)
 ##   2 : overflow, cannot set the requested numeric level; level has been set to the maximum (6)
 ##   3 : unknown, cannot set the requested string level; level has been set to the default
-##   4 : unknown garbage, cannot set the requested level; level has been set to the default
 ##
 set_loglevel() {
-	local LEVEL="$1"
+	declare LEVEL="$1"
 	declare -i i err=0
 
 	if [[ $LEVEL =~ ^[0-9]+$ ]]; then
 		if (( LEVEL < 0 )); then
 			LEVEL=0
 			err=1
-		elif (( LOGLEVEL > ( ${#LOGLEVELS[@]} - 1 ) )); then
+		elif (( LOGLEVEL >= ${#LOGLEVELS[@]} )); then
 			LEVEL=$(( ${#LOGLEVELS[@]} - 1 ))
 			err=2
 		fi
-	elif [[ $LEVEL =~ ^[A-Z]+$ ]]; then
+	else
 		while : ; do
-			for (( i=0; i < ${#LOGLEVELS[@]}; ++i )); do
+			for (( i=0; i< ${#LOGLEVELS[@]}; ++i )); do
 				if [[ $LEVEL == ${LOGLEVELS[$i]} ]]; then
 					LEVEL=$i
 					break 2
@@ -147,9 +151,6 @@ set_loglevel() {
 			err=3
 			break
 		done
-	else
-		LEVEL=$LOGLEVEL_DEFAULT
-		err=4
 	fi
 	if [[ $LOGLEVEL != $LEVEL ]]; then
 		LOGLEVEL=$LEVEL

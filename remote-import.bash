@@ -59,7 +59,7 @@ while [ $# -gt 0 ]; do
 			break
 			;;
 		-*)
-			echoerr "Unknown option '$1'"
+			echoerror "Unknown option '$1'"
 			exit 1
 			;;
 		*)
@@ -74,7 +74,7 @@ fi
 
 CONF_DIR="$(find_conf_dir "$PWD")"
 if [[ ! -d ${CONF_DIR} ]]; then
-	echoerr "Conf directory not found!"
+	echoerror "Conf directory not found!"
 	exit 1
 fi
 
@@ -82,7 +82,7 @@ echodebug "Loading source site '$OPT_SRCSITE' info from '${CONF_DIR}/${OPT_SRCCO
 eval "$(load_site_info_wp "${CONF_DIR}/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
 	
 if [[ -z $SRC_SITE_URL ]]; then
-	echoerr "Site source site not specified!"
+	echoerror "Site source site not specified!"
 	exit 1
 fi
 
@@ -90,7 +90,7 @@ echodebug "Loading destination site '$OPT_DSTSITE' info from '${CONF_DIR}/${OPT_
 eval "$(load_site_info_wp "${CONF_DIR}/${OPT_DSTCONF}" "$OPT_DSTSITE" "DST_")"
 
 if [[ -z $DST_SITE_URL ]]; then
-	echoerr "Site destination site not specified!"
+	echoerror "Site destination site not specified!"
 	exit 1
 fi
 

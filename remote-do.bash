@@ -47,7 +47,7 @@ while [ $# -gt 0 ]; do
 			break
 			;;
 		-*)
-			echoerr "Unknown option '$1'"
+			echoerror "Unknown option '$1'"
 			exit 1
 			;;
 		*)
@@ -72,7 +72,7 @@ CONF_DIR="$(find_conf_dir "$PWD")"
 echodebug "find_conf_dir: \$?=$?"
 echodebug "CONF_DIR='$CONF_DIR'"
 if [[ ! -d ${CONF_DIR} ]]; then
-	echoerr "Conf directory not found!"
+	echoerror "Conf directory not found!"
 	exit 1
 fi
 for OPT_CONF in "${OPT_CONFS[@]}"; do
