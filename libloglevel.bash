@@ -1,28 +1,15 @@
-[[ -n $LIBLOGLEVEL_VERSION ]] && return
-declare -ir LIBLOGLEVEL_VERSION=1
 
-declare -a LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
-declare -a LOGCOLORS=( 0  '1;31' '31' '33' '34' '37'  '1' )
-declare -i LOGLEVEL_DEFAULT=3
+declare -ga LOGLEVELS=( OFF FATAL ERROR WARN INFO DEBUG TRACE )
+declare -ga LOGCOLORS=( 0  '1;31' '31' '33' '34' '37'  '1' )
+declare -gi LOGLEVEL_DEFAULT=3
 
 if [[ -z $LOGDOMAIN ]]; then
-	declare LOGDOMAIN="${BASH_SOURCE[1]##*/}"
-fi
-
-if [[ -z $LOGLEVEL ]]; then
-	declare -i LOGLEVEL=$LOGLEVEL_DEFAULT
-fi
-
-if [[ -z $LOGCOLOR ]]; then
-	declare -i LOGCOLOR=1
-fi
-
-if [[ -z $LOGSINK ]]; then
-	declare LOGSINK='1>&2'
+	declare -g LOGDOMAIN="${BASH_SOURCE[1]##*/}"
 fi
 
 
-generate_logfunctions() {
+
+generate_log_functions() {
 	declare -a SUFFIXES=( "${LOGLEVELS[@],,}" )
 	unset SUFFIXES[0]
 	declare -i LEVEL i
@@ -31,6 +18,17 @@ generate_logfunctions() {
 	declare COLOR
 	declare -r RESET="\e[0m"
 	declare TEMPLATE TEMPLATE_SINK
+
+	if [[ -z $LOGLEVEL ]]; then
+		declare -gi LOGLEVEL=$LOGLEVEL_DEFAULT
+	fi
+	if [[ -z $LOGCOLOR ]]; then
+		declare -i LOGCOLOR=1
+	fi
+		
+	if [[ -z $LOGSINK ]]; then
+		declare LOGSINK='1>&2'
+	fi
 
 	for LEVEL in ${!SUFFIXES[@]}; do
 		SUFFIX=${SUFFIXES[$LEVEL]}
@@ -42,7 +40,7 @@ generate_logfunctions() {
 		COLOR="\e[${COLOR}m"
 			
 		if (( LOGLEVEL >= LEVEL )); then
-			if [[ $LOGCOLOR == 1 ]]; then
+			if (( $LOGCOLOR == 1 )); then
 				TEMPLATE_SINK=$(cat <<- EOF
 					{ 
 						while read -r MSG; do printf '%b:%b:%s\n' "${COLOR}\$LOGDOMAIN${RESET}" "${COLOR}${LEVELNAME}${RESET}" "\$MSG"; done;
@@ -135,7 +133,7 @@ set_loglevel() {
 		if (( LEVEL < 0 )); then
 			LEVEL=0
 			err=1
-		elif (( LOGLEVEL >= ${#LOGLEVELS[@]} )); then
+		elif (( LEVEL >= ${#LOGLEVELS[@]} )); then
 			LEVEL=$(( ${#LOGLEVELS[@]} - 1 ))
 			err=2
 		fi
@@ -152,16 +150,10 @@ set_loglevel() {
 			break
 		done
 	fi
-	if [[ $LOGLEVEL != $LEVEL ]]; then
-		LOGLEVEL=$LEVEL
-		generate_logfunctions
-	fi
+	LOGLEVEL=$LEVEL generate_log_functions
 	return $err
 }
 
-__loglevel_init() {
-	generate_logfunctions
-}
+generate_log_functions
 
-__loglevel_init
 

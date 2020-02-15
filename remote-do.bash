@@ -141,11 +141,10 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 			echo "eval \"$@\";" | remote_exec "$SITE_URL"
 		fi
 		EXIT_CODE=$?
+		echoinfo "Finished (EXIT_CODE=$EXIT_CODE)."
 	done
 done
 
 exec 0<&6 6<&- # restore stdin
-echoinfo "Finished (EXIT_CODE=$EXIT_CODE)."
-exit $EXIT_CODE
 
 
