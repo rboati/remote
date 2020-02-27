@@ -3,10 +3,12 @@
 DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
 NAME="${0##*/}"
 
-exec 3>&2
-LOGSINK='1>&3'
-[[ -z $LOGLEVEL ]] && LOGLEVEL=4
 source "${DIR}/libloglevel.bash"
+
+[[ -z $LOGLEVEL ]] && LOGLEVEL=4
+exec 3>&2 # copy stderr
+LOGSINK='1>&3'
+set_loglevel "$LOGLEVEL"
 exec >  >(LOGDOMAIN=stdout loginfo)
 exec 2> >(LOGDOMAIN=stderr logwarn)
 
@@ -80,7 +82,7 @@ fi
 
 echodebug "Loading source site '$OPT_SRCSITE' info from '${CONF_DIR}/${OPT_SRCCONF}'."
 eval "$(load_site_info_wp "${CONF_DIR}/${OPT_SRCCONF}" "$OPT_SRCSITE" "SRC_")"
-	
+
 if [[ -z $SRC_SITE_URL ]]; then
 	echoerror "Site source site not specified!"
 	exit 1

@@ -9,80 +9,97 @@ fi
 
 
 
-generate_log_functions() {
-	declare -a SUFFIXES=( "${LOGLEVELS[@],,}" )
-	unset SUFFIXES[0]
-	declare -i LEVEL i
-	declare SUFFIX
-	declare LEVELNAME
-	declare COLOR
-	declare -r RESET="\e[0m"
-	declare TEMPLATE TEMPLATE_SINK
+logdomain_filter() {
+	local prefix="$1"
+	local IFS='' msg
+	while read -r msg; do
+		printf '%b%s\n' "$prefix" "$msg"
+	done
+}
 
-	if [[ -z $LOGLEVEL ]]; then
-		declare -gi LOGLEVEL=$LOGLEVEL_DEFAULT
-	fi
+loglevel_filter() {
+	local prefix="$1"
+	local IFS='' msg
+	while read -r msg; do
+		printf '%b%s\n' "$prefix" "$msg"
+	done
+}
+
+
+generate_log_functions() {
+	local -i loglevel="${1:-$LOGLEVEL_DEFAULT}"
+	local -a suffixes=( "${LOGLEVELS[@],,}" )
+	unset suffixes[0]
+	local -i level fd
+	local suffix
+	local level_name
+	local color reset
+	local template
+
+	for (( level=0; level<${#LOGLEVELS[@]}; ++level)); do
+		let fd=100+level
+		eval "exec ${fd}>&-"
+	done
+
 	if [[ -z $LOGCOLOR ]]; then
 		declare -i LOGCOLOR=1
 	fi
-		
+
 	if [[ -z $LOGSINK ]]; then
 		declare LOGSINK='1>&2'
 	fi
 
-	for LEVEL in ${!SUFFIXES[@]}; do
-		SUFFIX=${SUFFIXES[$LEVEL]}
-		LEVELNAME="${LOGLEVELS[$LEVEL]}"
-		COLOR="${LOGCOLORS[$LEVEL]}"
-		if [[ -z $COLOR ]]; then
-			COLOR='0'
+	for level in ${!suffixes[@]}; do
+		suffix=${suffixes[$level]}
+		level_name="${LOGLEVELS[$level]}"
+		let fd=100+level
+
+		if (( $LOGCOLOR == 1 )); then
+			color="${LOGCOLORS[$level]}"
+			[[ -z $color ]] && color='0'
+			color="\e[${color}m"
+			reset="\e[0m"
+		else
+			color=''
+			reset=''
 		fi
-		COLOR="\e[${COLOR}m"
-			
-		if (( LOGLEVEL >= LEVEL )); then
-			if (( $LOGCOLOR == 1 )); then
-				TEMPLATE_SINK=$(cat <<- EOF
-					{ 
-						while read -r MSG; do printf '%b:%b:%s\n' "${COLOR}\$LOGDOMAIN${RESET}" "${COLOR}${LEVELNAME}${RESET}" "\$MSG"; done;
-					} $LOGSINK
-					EOF
-				)
-			else
-				TEMPLATE_SINK=$(cat <<- EOF
-					{ 
-						while read -r MSG; do printf '%s:%s:%s\n' "\$LOGDOMAIN" "$LEVELNAME" "\$MSG"; done;
-					} $LOGSINK
-					EOF
-				)
-			fi
-			TEMPLATE=$(cat <<- EOF
-				log${SUFFIX}()   {
-					declare -ir X=\$?; declare MSG;
-					$TEMPLATE_SINK;
+
+		if (( loglevel >= level )); then
+			template=$(cat <<- EOF
+				exec ${fd}>&2;
+				exec ${fd}> >(loglevel_filter "${color}${level_name}${reset}:" $LOGSINK;);
+
+				log${suffix}()   {
+					declare -ir X=\$?;
+					cat > >(logdomain_filter "${color}\$LOGDOMAIN${reset}:" >&${fd};);
 					return \$X;
 				}
-				echo${SUFFIX}()  {
-					declare -ir X=\$?; declare MSG;
-					printf '%s\n' "\$*" | $TEMPLATE_SINK;
+				echo${suffix}()  {
+					declare -ir X=\$?; declare msg;
+					printf '%b:%s\n' "${color}\$LOGDOMAIN${reset}" "\$*" >&${fd};
 					return \$X;
 				}
-				print${SUFFIX}() {
-					declare -ir X=\$?; declare MSG; declare FMT="\$1"; shift;
-					printf "\$FMT" "\$@" | $TEMPLATE_SINK;
+				print${suffix}() {
+					declare -ir X=\$?; declare msg; declare FMT="\$1"; shift;
+					printf "${color}\$LOGDOMAIN${reset}:\$FMT\n" "\$@" >&${fd};
 					return \$X;
 				}
+				EOF
+			)
+			eval "$template"
+			template+=$(cat <<- EOF
 				EOF
 			)
 		else
-			TEMPLATE=$(cat <<- EOF
-				log${SUFFIX}()   { return \$?; }
-				echo${SUFFIX}()  { return \$?; }
-				print${SUFFIX}() { return \$?; }
+			template=$(cat <<- EOF
+				log${suffix}()   { declare -ir X=\$?; cat > /dev/null; return \$X; }
+				echo${suffix}()  { return \$?; }
+				print${suffix}() { return \$?; }
 				EOF
 			)
 		fi
-
-		eval "$TEMPLATE"
+		eval "$template"
+		declare -gi LOGLEVEL="$loglevel"
 	done
 }
 
@@ -114,7 +131,7 @@ printtrace() { return $?; }
 
 ##
 ## Arguments:
-##   {LEVEL} : level number or level name
+##   {level} : level number or level name
 ##
 ## Globals:
 ##   LOGLEVEL, LOGLEVEL_DEFAULT, LOGLEVELS, LOGCOLORS
@@ -126,34 +143,33 @@ printtrace() { return $?; }
 ##   3 : unknown, cannot set the requested string level; level has been set to the default
 ##
 set_loglevel() {
-	declare LEVEL="$1"
+	declare level="$1"
 	declare -i i err=0
 
-	if [[ $LEVEL =~ ^[0-9]+$ ]]; then
-		if (( LEVEL < 0 )); then
-			LEVEL=0
+	if [[ $level =~ ^[0-9]+$ ]]; then
+		if (( level < 0 )); then
+			level=0
 			err=1
-		elif (( LEVEL >= ${#LOGLEVELS[@]} )); then
-			LEVEL=$(( ${#LOGLEVELS[@]} - 1 ))
+		elif (( level >= ${#LOGLEVELS[@]} )); then
+			level=$(( ${#LOGLEVELS[@]} - 1 ))
 			err=2
 		fi
 	else
 		while : ; do
 			for (( i=0; i< ${#LOGLEVELS[@]}; ++i )); do
-				if [[ $LEVEL == ${LOGLEVELS[$i]} ]]; then
-					LEVEL=$i
+				if [[ ${level,,} == "${LOGLEVELS[$i],,}" ]]; then
+					level=$i
 					break 2
 				fi
 			done
-			LEVEL=$LOGLEVEL_DEFAULT
+			level=$LOGLEVEL_DEFAULT
 			err=3
 			break
 		done
 	fi
-	LOGLEVEL=$LEVEL generate_log_functions
+	generate_log_functions $level
 	return $err
 }
 
-generate_log_functions
 
 
