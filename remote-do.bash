@@ -95,7 +95,7 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 			echodebug "Skipping unselected $SITE_NAME"
 			continue
 		fi
-		
+
 		if [[ ${OPT_CONF} == live ]]; then
 			i="\e[1;37m${SITE_NAME}\e[0m (\e[1;31m${OPT_CONF}\e[0m)"
 		else
@@ -103,7 +103,7 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 		fi
 
 		[[ $OPT_QUIET != yes ]] && echo -en "$i"
-		
+
 		if [[ $OPT_INTERACTIVE == yes ]]; then
 			echo -en " ["
 			echo -en "\e[1mCTRL-C\e[0m to stop, "
