@@ -1,17 +1,19 @@
-#/bin/bash
+#!/bin/bash
 
 DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
-NAME="${0##*/}"
 
+# shellcheck disable=SC1090
 source "${DIR}/libloglevel.bash"
 
 [[ -z $LOGLEVEL ]] && LOGLEVEL=4
 exec 3>&2 # copy stderr
+# shellcheck disable=SC2034
 LOGSINK='1>&3'
 set_loglevel "$LOGLEVEL"
 exec >  >(LOGDOMAIN=stdout loginfo)
 exec 2> >(LOGDOMAIN=stderr logwarn)
 
+# shellcheck disable=SC1090
 source "${DIR}/libremote_wp.bash"
 
 OPT_FORCE=no
@@ -50,11 +52,6 @@ while [ $# -gt 0 ]; do
 		-d|--deactivate)
 			shift
 			OPT_DEACTIVATE=yes
-			;;
-		-q|--quiet)
-			shift
-			OPT_QUIET=yes
-			OPT_INTERACTIVE=no
 			;;
 		--)
 			shift
@@ -105,7 +102,7 @@ if [[ ! -f $BACKUP || $OPT_FORCE == yes ]]; then
 fi
 
 echoinfo "Importing into db ${OPT_DSTCONF}/${OPT_DSTSITE}."
-cat "$BACKUP" | import_db "$DST_SITE_URL"
+import_db "$DST_SITE_URL" < "$BACKUP"
 
 echoinfo "Replacing '$SRC_SITE_WEBURL' -> '$DST_SITE_WEBURL'."
 replace_text_in_db "${DST_SITE_URL}" "$SRC_SITE_WEBURL" "$DST_SITE_WEBURL"

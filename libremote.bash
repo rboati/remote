@@ -28,17 +28,19 @@ parse_site_url() {
 					TMP_SITE_DIR="/${TMP_SITE_DIR#*/}"
 					;;
 			esac
+
+			# shellcheck disable=SC2088
 			case "$TMP_SITE_DIR" in
-				"~/"*)
+				'~/'*)
 					TMP_SITE_DIR="${TMP_SITE_DIR#\~/}"
 					;;
-				"./"*)
+				'./'*)
 					TMP_SITE_DIR="${TMP_SITE_DIR#./}"
 					;;
-				"")
+				'')
 					TMP_SITE_DIR="."
 					;;
-				"/"*)
+				'/'*)
 					;;
 				*)
 					TMP_SITE_DIR="/$TMP_SITE_DIR"
@@ -66,7 +68,7 @@ remote_exec() {
 	elif [[ -z $DOCKER ]]; then
 		ssh_wrapper "${SSH_DEST}" -- "exec /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
 	else
-		ssh_wrapper "${SSH_DEST}" -- "exec docker exec -i "${DOCKER}" /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
+		ssh_wrapper "${SSH_DEST}" -- "exec docker exec -i \"${DOCKER}\" /bin/bash -c \"cd '${SITE_DIR}'; exec /bin/bash;\""
 	fi
 }
 
@@ -88,7 +90,7 @@ remote_exec_i() {
 array_contains() {
 	local i match="$1"
 	shift
-	for i; do [[ $i == $match ]] && return 0; done
+	for i; do [[ $i == "$match" ]] && return 0; done
 	return 1
 }
 
@@ -97,13 +99,13 @@ load_site_info() {
 	local CONF_FILE="$1"
 	local SITE_NAME_REQ="$2"
 	local PREFIX="$3"
-	local TMP_SITE_NAME TMP_SITE_URL TMP_EXTRA TMP_EXTRA1 TMP_EXTRA2 TMP_EXTRA3 TMP_EXTRA4 TMP_EXTRA5 
-	while read TMP_SITE_NAME TMP_SITE_URL TMP_EXTRA1 TMP_EXTRA2 TMP_EXTRA3 TMP_EXTRA4 TMP_EXTRA5; do
+	local TMP_SITE_NAME TMP_SITE_URL TMP_EXTRA1 TMP_EXTRA2 TMP_EXTRA3 TMP_EXTRA4 TMP_EXTRA5
+	while read -r TMP_SITE_NAME TMP_SITE_URL TMP_EXTRA1 TMP_EXTRA2 TMP_EXTRA3 TMP_EXTRA4 TMP_EXTRA5; do
 		[[ -z $TMP_SITE_NAME ]] && continue
 		[[ $TMP_SITE_NAME == \#* ]] && continue
-		[[ $TMP_SITE_NAME == $SITE_NAME_REQ ]] && break
+		[[ $TMP_SITE_NAME == "$SITE_NAME_REQ" ]] && break
 	done < "${CONF_FILE}"
-	
+
 	cat <<- EOF
 	${PREFIX}SITE_NAME='$TMP_SITE_NAME'
 	${PREFIX}SITE_URL='$TMP_SITE_URL'

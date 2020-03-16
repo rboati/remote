@@ -29,7 +29,7 @@ loglevel_filter() {
 generate_log_functions() {
 	local -i loglevel="${1:-$LOGLEVEL_DEFAULT}"
 	local -a suffixes=( "${LOGLEVELS[@],,}" )
-	unset suffixes[0]
+	unset 'suffixes[0]'
 	local -i level fd
 	local suffix
 	local level_name
@@ -37,7 +37,7 @@ generate_log_functions() {
 	local template
 
 	for (( level=0; level<${#LOGLEVELS[@]}; ++level)); do
-		let fd=100+level
+		(( fd=100+level ))
 		eval "exec ${fd}>&-"
 	done
 
@@ -49,12 +49,12 @@ generate_log_functions() {
 		declare LOGSINK='1>&2'
 	fi
 
-	for level in ${!suffixes[@]}; do
+	for level in "${!suffixes[@]}"; do
 		suffix=${suffixes[$level]}
 		level_name="${LOGLEVELS[$level]}"
-		let fd=100+level
+		(( fd=100+level ))
 
-		if (( $LOGCOLOR == 1 )); then
+		if (( LOGCOLOR == 1 )); then
 			color="${LOGCOLORS[$level]}"
 			[[ -z $color ]] && color='0'
 			color="\e[${color}m"
@@ -99,6 +99,7 @@ generate_log_functions() {
 			)
 		fi
 		eval "$template"
+		# shellcheck disable=SC2034
 		declare -gi LOGLEVEL="$loglevel"
 	done
 }

@@ -1,10 +1,11 @@
-#/bin/bash
+#!/bin/bash
 
 DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
-NAME="${0##*/}"
 
 [[ -z $LOGLEVEL ]] && LOGLEVEL=4
+# shellcheck disable=SC1090
 source "${DIR}/libloglevel.bash"
+# shellcheck disable=SC1090
 source "${DIR}/libremote.bash"
 
 OPT_INTERACTIVE=yes
@@ -59,7 +60,7 @@ if [[ ${#OPT_CONFS[@]} == 0 ]]; then
 	# default conf
 	OPT_CONFS+=(test)
 fi
-echotrace "OPT_CONFS=(${OPT_CONFS[@]})."
+echotrace "OPT_CONFS=(${OPT_CONFS[*]})."
 
 exec 6<&0 # save stdin
 
@@ -84,14 +85,15 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 
 	exec < "${CONF_DIR}/${OPT_CONF}"
 
-	while read SITE_NAME SITE_URL SITE_EXTRA; do
+	# shellcheck disable=SC2034
+	while read -r SITE_NAME SITE_URL SITE_EXTRA; do
 		[[ -z $SITE_NAME ]] && continue
 		if [[ $SITE_NAME == \#* ]]; then
 			echodebug "Skipping comment line $SITE_NAME"
 			continue
 		fi
 
-		if [[ ${#OPT_SITES[@]} > 0 ]] && ! array_contains "$SITE_NAME" "${OPT_SITES[@]}" ; then
+		if (( ${#OPT_SITES[@]} > 0 )) && ! array_contains "$SITE_NAME" "${OPT_SITES[@]}" ; then
 			echodebug "Skipping unselected $SITE_NAME"
 			continue
 		fi
@@ -137,8 +139,8 @@ for OPT_CONF in "${OPT_CONFS[@]}"; do
 			echotrace "remote_exec_i '$SITE_URL'"
 			remote_exec_i "$SITE_URL" 0<&6
 		else
-			echotrace "echo '$@' | remote_exec '$SITE_URL'"
-			echo "eval \"$@\";" | remote_exec "$SITE_URL"
+			echotrace "echo '*' | remote_exec '$SITE_URL'"
+			echo "eval \"$*\";" | remote_exec "$SITE_URL"
 		fi
 		EXIT_CODE=$?
 		echoinfo "Finished (EXIT_CODE=$EXIT_CODE)."

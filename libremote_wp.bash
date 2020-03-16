@@ -2,6 +2,8 @@
 declare -i -r LIBREMOTE_WP_VERSION=1
 
 DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd -P)"
+
+# shellcheck disable=1090
 source "$DIR/libremote.bash"
 
 export_db() {
@@ -34,7 +36,7 @@ load_site_info_wp() {
 	local CONF_FILE="$1"
 	local SITE_NAME_REQ="$2"
 	local PREFIX="$3"
-	
+
 	local TMP_SITE_NAME
 	local TMP_SITE_URL
 	local TMP_EXTRA1
@@ -42,11 +44,11 @@ load_site_info_wp() {
 	local TMP_EXTRA3
 	local TMP_EXTRA4
 	local TMP_EXTRA5
-	
+
 	local TMP_SSH_DEST
 	local TMP_SITE_DIR
 	local TMP_DOCKER
-	
+
 	eval "$(load_site_info "$CONF_FILE" "$SITE_NAME_REQ" "local TMP_")"
 
 	eval "$(parse_site_url "$TMP_SITE_URL" "local TMP_")"
@@ -61,11 +63,11 @@ load_site_info_wp() {
 	cat <<- EOF
 	${PREFIX}SITE_NAME='$TMP_SITE_NAME'
 	${PREFIX}SITE_URL='$TMP_SITE_URL'
-	${PREFIX}EXTRA1='$TMP_EXTRA1'   
-	${PREFIX}EXTRA2='$TMP_EXTRA2'   
-	${PREFIX}EXTRA3='$TMP_EXTRA3'   
-	${PREFIX}EXTRA4='$TMP_EXTRA4'   
-	${PREFIX}EXTRA5='$TMP_EXTRA5'   
+	${PREFIX}EXTRA1='$TMP_EXTRA1'
+	${PREFIX}EXTRA2='$TMP_EXTRA2'
+	${PREFIX}EXTRA3='$TMP_EXTRA3'
+	${PREFIX}EXTRA4='$TMP_EXTRA4'
+	${PREFIX}EXTRA5='$TMP_EXTRA5'
 	${PREFIX}SSH_DEST='$TMP_SSH_DEST'
 	${PREFIX}SITE_DIR='$TMP_SITE_DIR'
 	${PREFIX}DOCKER='$TMP_DOCKER'
@@ -100,7 +102,7 @@ deactivate_live_plugins() {
 replace_text_in_db() {
 	local SITE_URL="$1"
 	local SRC="$2"
-	local DST="$3" 
+	local DST="$3"
 	{
 		cat <<- EOF
 		wp search-replace "$SRC" "$DST"
